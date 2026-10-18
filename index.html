@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#faf5f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Наши места">
+<title>Наши места</title>
+<style>
+  :root {
+    --bg: #faf5f1;
+    --card: #ffffff;
+    --text: #2b2523;
+    --muted: #8a7f7a;
+    --line: #eadfd8;
+    --accent: #e0635a;
+    --accent-soft: #fde9e6;
+    --ok: #4c9a6a;
+    --radius: 16px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1816;
+      --card: #272220;
+      --text: #f3ebe6;
+      --muted: #a89c96;
+      --line: #3a3330;
+      --accent: #f07a70;
+      --accent-soft: #3d2623;
+      --ok: #6dbb8a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.4;
+  }
+  main { max-width: 560px; margin: 0 auto; padding: 16px; padding-bottom: 80px; }
+  .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  h1 { font-size: 24px; margin: 0; }
+  h2 { font-size: 18px; margin: 0 0 8px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .hint { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+  .notice {
+    background: var(--accent-soft);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  .error { color: var(--accent); font-size: 14px; margin: 8px 0 0; }
+  label { display: block; font-size: 14px; color: var(--muted); margin-bottom: 10px; }
+  input {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    padding: 12px 14px;
+    font-size: 16px;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  #add-form input { margin: 0 0 8px; }
+  button {
+    font: inherit;
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    cursor: pointer;
+  }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button.accent { background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 600; }
+  button.ghost { background: transparent; }
+  button:active { transform: scale(0.98); }
+  #add-form button { width: 100%; }
+  .row { display: flex; gap: 8px; }
+  .row button { flex: 1; }
+  .actions { display: flex; gap: 8px; margin-bottom: 12px; }
+  .actions button { flex: 1; font-size: 14px; }
+  .pick {
+    background: var(--accent-soft);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .pick .label { font-size: 13px; color: var(--muted); margin: 0 0 4px; }
+  .pick .name { font-size: 22px; font-weight: 700; margin: 0 0 12px; word-break: break-word; }
+  .pick .row { justify-content: center; }
+  .pick .row button { flex: 0 1 auto; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+  .tabs button { flex: 1; }
+  .tabs button.on { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .tabs b { font-weight: 600; opacity: 0.7; margin-left: 4px; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  .place {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px 12px 12px 16px;
+    margin-bottom: 8px;
+  }
+  .place-main { flex: 1; min-width: 0; }
+  .place-title { font-weight: 600; word-break: break-word; color: var(--text); text-decoration: none; }
+  a.place-title { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+  .place-meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .rating { color: var(--ok); font-weight: 600; }
+  .place button { min-height: 40px; padding: 0 12px; font-size: 14px; }
+  .place .del { padding: 0 10px; color: var(--muted); }
+  .empty { text-align: center; color: var(--muted); padding: 32px 16px; }
+  dialog {
+    border: none;
+    border-radius: var(--radius);
+    padding: 20px;
+    background: var(--card);
+    color: var(--text);
+    width: min(92vw, 360px);
+  }
+  dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
+  .stars { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 12px 0; }
+  .stars button { padding: 0; font-weight: 600; }
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translate(-50%, 20px);
+    background: var(--text);
+    color: var(--bg);
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    max-width: 90vw;
+    text-align: center;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <h1>Наши места 🗺</h1>
+    <button id="logout" class="ghost" hidden>Выйти</button>
+  </header>
+
+  <p id="setup" class="notice" hidden>
+    Сначала вставь настройки Firebase в начало скрипта в файле index.html
+    (блок <code>firebaseConfig</code>). Как это сделать — в инструкции.
+  </p>
+
+  <section id="login" class="card" hidden>
+    <h2>Вход для двоих</h2>
+    <p class="hint">
+      Придумайте общий секретный код: по нему вы оба увидите один и тот же список.
+      Если вам прислали ссылку, код подставится сам.
+    </p>
+    <label>Твоё имя
+      <input id="name" maxlength="30" autocomplete="nickname" placeholder="Например, Аня">
+    </label>
+    <label>Код пары
+      <input id="code" maxlength="64" autocapitalize="off" autocomplete="off" spellcheck="false"
+             placeholder="например, x7k2-m9qp-4tbd-8wnr">
+    </label>
+    <div class="row">
+      <button id="gen" type="button" class="ghost">Придумать код</button>
+      <button id="enter" type="button" class="primary">Войти</button>
+    </div>
+    <p id="login-error" class="error" hidden></p>
+  </section>
+
+  <section id="app" hidden>
+    <form id="add-form" class="card" autocomplete="off">
+      <input id="title" placeholder="Куда хотим сходить?" maxlength="200" required>
+      <input id="link" type="url" placeholder="Ссылка на карту или сайт (необязательно)">
+      <button class="primary" type="submit">Добавить место</button>
+    </form>
+
+    <div class="actions">
+      <button id="random" type="button" class="accent">🎲 Случайное место</button>
+      <button id="share" type="button" class="ghost">🔗 Ссылка для двоих</button>
+    </div>
+
+    <div id="random-box" class="pick" hidden>
+      <p class="label">Сегодня идёте сюда:</p>
+      <p id="random-name" class="name"></p>
+      <div class="row">
+        <button id="random-again" type="button">Ещё раз</button>
+        <button id="random-close" type="button" class="primary">Отлично!</button>
+      </div>
+    </div>
+
+    <nav class="tabs">
+      <button type="button" data-tab="want" class="on">Хотим сходить<b id="cnt-want">0</b></button>
+      <button type="button" data-tab="done">Были<b id="cnt-done">0</b></button>
+    </nav>
+
+    <ul id="list"></ul>
+  </section>
+</main>
+
+<dialog id="rate">
+  <h2>Как вам место?</h2>
+  <p class="hint">Поставьте оценку или пропустите.</p>
+  <div class="stars" id="stars"></div>
+  <div class="row">
+    <button type="button" id="rate-skip">Без оценки</button>
+    <button type="button" id="rate-cancel" class="ghost">Отмена</button>
+  </div>
+</dialog>
+
+<div id="toast" role="status"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, doc, updateDoc, deleteDoc,
+  onSnapshot, query, orderBy, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDkBUJTTZuVsikdLi4dQ2KNAM6XOWm3aRI",
+  authDomain: "places-for-us.firebaseapp.com",
+  projectId: "places-for-us",
+  storageBucket: "places-for-us.firebasestorage.app",
+  messagingSenderId: "661491625941",
+  appId: "1:661491625941:web:ff3803999f890dd02b575c"
+};
+
+
+const $ = (s) => document.querySelector(s);
+const CODE_RE = /^[a-z0-9-]{12,64}$/;
+
+const state = { code: "", name: "", places: [], tab: "want", ratingFor: null, lastRandom: null };
+let db = null;
+let unsub = null;
+
+function store(key, value) {
+  try {
+    if (value === undefined) return localStorage.getItem(key) || "";
+    if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value);
+  } catch (e) { /* хранилище недоступно, ничего страшного */ }
+  return "";
+}
+
+function toast(text) {
+  const t = $("#toast");
+  t.textContent = text;
+  t.classList.add("show");
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => t.classList.remove("show"), 3200);
+}
+
+function humanError(e) {
+  if (e && e.code === "permission-denied") {
+    return "Нет доступа. Проверь правила Firestore и что код пары не короче 12 символов.";
+  }
+  return "Что-то пошло не так: " + ((e && e.message) || e);
+}
+
+function safeUrl(value) {
+  try {
+    const u = new URL(value);
+    return (u.protocol === "http:" || u.protocol === "https:") ? u.href : null;
+  } catch (e) { return null; }
+}
+
+function normalizeCode(v) {
+  return v.trim().toLowerCase().replace(/\s+/g, "-");
+}
+
+function genCode() {
+  const abc = "abcdefghjkmnpqrstuvwxyz23456789";
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  let out = "";
+  bytes.forEach((b, i) => {
+    out += abc[b % abc.length];
+    if (i % 4 === 3 && i < 15) out += "-";
+  });
+  return out;
+}
+
+function placesCol() {
+  return collection(db, "pairs", state.code, "places");
+}
+
+// ---------- экраны ----------
+function showLogin() {
+  stop();
+  $("#login").hidden = false;
+  $("#app").hidden = true;
+  $("#logout").hidden = true;
+  $("#name").value = state.name;
+  $("#code").value = state.code;
+}
+
+function showApp() {
+  $("#login").hidden = true;
+  $("#app").hidden = false;
+  $("#logout").hidden = false;
+  start();
+}
+
+function start() {
+  stop();
+  const q = query(placesCol(), orderBy("createdAt", "desc"));
+  unsub = onSnapshot(q, (snap) => {
+    state.places = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    render();
+  }, (err) => toast(humanError(err)));
+}
+
+function stop() {
+  if (unsub) { unsub(); unsub = null; }
+  state.places = [];
+}
+
+// ---------- отрисовка ----------
+function render() {
+  const want = state.places.filter((p) => !p.visited);
+  const done = state.places.filter((p) => p.visited);
+  $("#cnt-want").textContent = want.length;
+  $("#cnt-done").textContent = done.length;
+
+  document.querySelectorAll(".tabs button").forEach((b) => {
+    b.classList.toggle("on", b.dataset.tab === state.tab);
+  });
+
+  const list = state.tab === "want" ? want : done;
+  const ul = $("#list");
+  ul.replaceChildren();
+
+  if (!list.length) {
+    const li = document.createElement("li");
+    li.className = "empty";
+    li.textContent = state.tab === "want"
+      ? "Пока пусто. Добавьте первое место ✨"
+      : "Здесь появятся места, где вы уже были.";
+    ul.append(li);
+    return;
+  }
+  list.forEach((p) => ul.append(card(p)));
+}
+
+function card(p) {
+  const li = document.createElement("li");
+  li.className = "place";
+
+  const main = document.createElement("div");
+  main.className = "place-main";
+
+  const url = p.link ? safeUrl(p.link) : null;
+  const title = document.createElement(url ? "a" : "span");
+  title.className = "place-title";
+  title.textContent = p.title || "";
+  if (url) { title.href = url; title.target = "_blank"; title.rel = "noopener noreferrer"; }
+  main.append(title);
+
+  const meta = document.createElement("div");
+  meta.className = "place-meta";
+  meta.append(document.createTextNode(p.addedBy ? "добавил(а): " + p.addedBy : ""));
+  if (p.visited && p.rating) {
+    const r = document.createElement("span");
+    r.className = "rating";
+    r.textContent = (p.addedBy ? " · " : "") + "оценка " + p.rating + "/10";
+    meta.append(r);
+  }
+  main.append(meta);
+  li.append(main);
+
+  const act = document.createElement("button");
+  if (p.visited) {
+    act.textContent = "Вернуть";
+    act.addEventListener("click", () => updateDoc(doc(placesCol(), p.id), { visited: false, rating: null }).catch((e) => toast(humanError(e))));
+  } else {
+    act.textContent = "Были ✓";
+    act.addEventListener("click", () => openRate(p.id));
+  }
+  li.append(act);
+
+  const del = document.createElement("button");
+  del.className = "del ghost";
+  del.setAttribute("aria-label", "Удалить");
+  del.textContent = "✕";
+  del.addEventListener("click", () => {
+    if (confirm("Удалить «" + (p.title || "") + "»?")) {
+      deleteDoc(doc(placesCol(), p.id)).catch((e) => toast(humanError(e)));
+    }
+  });
+  li.append(del);
+  return li;
+}
+
+// ---------- оценка ----------
+function openRate(id) {
+  state.ratingFor = id;
+  $("#rate").showModal();
+}
+
+function finishRate(rating) {
+  const id = state.ratingFor;
+  $("#rate").close();
+  state.ratingFor = null;
+  if (!id) return;
+  updateDoc(doc(placesCol(), id), { visited: true, rating: rating }).catch((e) => toast(humanError(e)));
+}
+
+// ---------- случайное место ----------
+function pickRandom() {
+  const want = state.places.filter((p) => !p.visited);
+  if (!want.length) { toast("В списке пока нет мест"); return; }
+  let pool = want;
+  if (want.length > 1 && state.lastRandom) pool = want.filter((p) => p.id !== state.lastRandom);
+  const p = pool[Math.floor(Math.random() * pool.length)];
+  state.lastRandom = p.id;
+  $("#random-name").textContent = p.title;
+  $("#random-box").hidden = false;
+}
+
+// ---------- события ----------
+function setup() {
+  const stars = $("#stars");
+  for (let i = 1; i <= 10; i++) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = i;
+    b.addEventListener("click", () => finishRate(i));
+    stars.append(b);
+  }
+  $("#rate-skip").addEventListener("click", () => finishRate(null));
+  $("#rate-cancel").addEventListener("click", () => { state.ratingFor = null; $("#rate").close(); });
+
+  $("#gen").addEventListener("click", () => {
+    $("#code").value = genCode();
+    toast("Код создан. Сохраните его и отправьте второму человеку");
+  });
+
+  $("#enter").addEventListener("click", () => {
+    const name = $("#name").value.trim();
+    const code = normalizeCode($("#code").value);
+    const err = $("#login-error");
+    err.hidden = true;
+    if (!name) { err.textContent = "Напиши своё имя"; err.hidden = false; return; }
+    if (!CODE_RE.test(code)) {
+      err.textContent = "Код должен быть из 12–64 символов: латинские буквы, цифры и дефис";
+      err.hidden = false;
+      return;
+    }
+    state.name = name;
+    state.code = code;
+    store("op_name", name);
+    store("op_code", code);
+    showApp();
+  });
+
+  $("#logout").addEventListener("click", () => {
+    store("op_code", null);
+    state.code = "";
+    showLogin();
+  });
+
+  $("#add-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const title = $("#title").value.trim();
+    if (!title) return;
+    const link = $("#link").value.trim();
+    addDoc(placesCol(), {
+      title,
+      link: link ? (safeUrl(link) || "") : "",
+      addedBy: state.name,
+      visited: false,
+      rating: null,
+      createdAt: serverTimestamp()
+    }).catch((err) => toast(humanError(err)));
+    e.target.reset();
+    state.tab = "want";
+    render();
+  });
+
+  document.querySelectorAll(".tabs button").forEach((b) => {
+    b.addEventListener("click", () => { state.tab = b.dataset.tab; render(); });
+  });
+
+  $("#random").addEventListener("click", pickRandom);
+  $("#random-again").addEventListener("click", pickRandom);
+  $("#random-close").addEventListener("click", () => { $("#random-box").hidden = true; });
+
+  $("#share").addEventListener("click", async () => {
+    const link = location.origin + location.pathname + "#" + state.code;
+    try {
+      await navigator.clipboard.writeText(link);
+      toast("Ссылка скопирована. Отправь её второму человеку");
+    } catch (e) {
+      prompt("Скопируй ссылку и отправь второму человеку:", link);
+    }
+  });
+}
+
+// ---------- запуск ----------
+const configured = firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("ВСТАВЬ");
+if (!configured) {
+  $("#setup").hidden = false;
+} else {
+  db = getFirestore(initializeApp(firebaseConfig));
+  setup();
+
+  state.name = store("op_name");
+  const fromLink = normalizeCode(location.hash.slice(1));
+  if (fromLink) history.replaceState(null, "", location.pathname + location.search);
+  state.code = CODE_RE.test(fromLink) ? fromLink : store("op_code");
+
+  if (state.name && CODE_RE.test(state.code)) {
+    store("op_code", state.code);
+    showApp();
+  } else {
+    showLogin();
+  }
+}
+</script>
+</body>
+</html>
