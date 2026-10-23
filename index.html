@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Наши места">
 <title>Наши места</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
 <style>
   :root {
     --bg: #faf5f1;
@@ -40,7 +41,8 @@
     line-height: 1.4;
   }
   main { max-width: 560px; margin: 0 auto; padding: 16px; padding-bottom: 80px; }
-  .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+  .top .btns { display: flex; gap: 6px; }
   h1 { font-size: 24px; margin: 0; }
   h2 { font-size: 18px; margin: 0 0 8px; }
   .card {
@@ -58,22 +60,26 @@
     font-size: 14px;
     margin-bottom: 12px;
   }
+  .news { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .error { color: var(--accent); font-size: 14px; margin: 8px 0 0; }
   label { display: block; font-size: 14px; color: var(--muted); margin-bottom: 10px; }
-  input {
+  input, select {
     display: block;
     width: 100%;
     margin-top: 4px;
     padding: 12px 14px;
+    font: inherit;
     font-size: 16px;
     color: var(--text);
     background: var(--bg);
     border: 1px solid var(--line);
     border-radius: 12px;
   }
-  input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-  #add-form input { margin: 0 0 8px; }
-  button {
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .add-form input, .add-form select { margin: 0 0 8px; }
+  .add-form .two { display: flex; gap: 8px; }
+  .add-form .two > * { flex: 1; min-width: 0; }
+  button, a.btn {
     font: inherit;
     min-height: 44px;
     padding: 0 16px;
@@ -82,16 +88,29 @@
     background: var(--card);
     color: var(--text);
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
   }
   button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
   button.accent { background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 600; }
+  button.ok { border-color: var(--ok); color: var(--ok); font-weight: 600; }
   button.ghost { background: transparent; }
   button:active { transform: scale(0.98); }
-  #add-form button { width: 100%; }
+  .add-form button[type="submit"] { width: 100%; }
   .row { display: flex; gap: 8px; }
   .row button { flex: 1; }
   .actions { display: flex; gap: 8px; margin-bottom: 12px; }
   .actions button { flex: 1; font-size: 14px; }
+  .sections { display: flex; gap: 6px; margin-bottom: 12px; }
+  .sections button { flex: 1; padding: 0 8px; font-weight: 600; }
+  .sections button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 4px; }
+  .chips button { min-height: 34px; padding: 0 12px; font-size: 14px; white-space: nowrap; flex: none; }
+  .chips button.on { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .toolbar { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+  .toolbar button { min-height: 34px; font-size: 13px; padding: 0 12px; }
   .pick {
     background: var(--accent-soft);
     border-radius: var(--radius);
@@ -104,28 +123,61 @@
   .pick .row { justify-content: center; }
   .pick .row button { flex: 0 1 auto; }
   .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
-  .tabs button { flex: 1; }
+  .tabs button { flex: 1; padding: 0 8px; }
   .tabs button.on { background: var(--text); color: var(--bg); border-color: var(--text); }
   .tabs b { font-weight: 600; opacity: 0.7; margin-left: 4px; }
   ul { list-style: none; padding: 0; margin: 0; }
   .place {
-    display: flex;
-    align-items: center;
-    gap: 8px;
     background: var(--card);
     border: 1px solid var(--line);
     border-radius: var(--radius);
     padding: 12px 12px 12px 16px;
     margin-bottom: 8px;
   }
+  .place-top { display: flex; align-items: flex-start; gap: 8px; }
   .place-main { flex: 1; min-width: 0; }
   .place-title { font-weight: 600; word-break: break-word; color: var(--text); text-decoration: none; }
   a.place-title { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
   .place-meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
   .rating { color: var(--ok); font-weight: 600; }
-  .place button { min-height: 40px; padding: 0 12px; font-size: 14px; }
-  .place .del { padding: 0 10px; color: var(--muted); }
+  .badge-new {
+    background: var(--accent);
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 8px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .place .del { min-height: 36px; padding: 0 10px; color: var(--muted); }
+  .place-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .place-actions button, .place-actions a.btn { min-height: 38px; font-size: 14px; padding: 0 12px; }
+  .votes { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; margin-top: 8px; font-size: 13px; color: var(--muted); }
+  .votes-label { margin-right: 4px; }
+  .votes button.heart {
+    min-height: 34px;
+    min-width: 30px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    font-size: 22px;
+    color: var(--line);
+    line-height: 1;
+  }
+  .votes button.heart.on { color: var(--accent); }
+  .votes-sum { margin-left: 6px; }
+  .votes-hot { margin-left: 6px; color: var(--accent); font-weight: 600; }
   .empty { text-align: center; color: var(--muted); padding: 32px 16px; }
+  #map {
+    height: 55vh;
+    min-height: 320px;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    margin-bottom: 12px;
+    background: var(--card);
+    overflow: hidden;
+  }
+  #pick-hint { font-weight: 600; }
   dialog {
     border: none;
     border-radius: var(--radius);
@@ -152,6 +204,7 @@
     transition: opacity 0.2s, transform 0.2s;
     max-width: 90vw;
     text-align: center;
+    z-index: 3000;
   }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
   [hidden] { display: none !important; }
@@ -161,12 +214,15 @@
 <main>
   <header class="top">
     <h1>Наши места 🗺</h1>
-    <button id="logout" class="ghost" hidden>Выйти</button>
+    <div class="btns">
+      <button id="notify" class="ghost" hidden aria-label="Включить уведомления">🔔</button>
+      <button id="logout" class="ghost" hidden>Выйти</button>
+    </div>
   </header>
 
   <p id="setup" class="notice" hidden>
-    Сначала вставь настройки Firebase в начало скрипта в файле index.html
-    (блок <code>firebaseConfig</code>). Как это сделать — в инструкции.
+    Не найдены настройки Firebase. Открой файл firebase-config.js и впиши свои значения
+    вместо «ВСТАВЬ_СЮДА» (см. инструкцию).
   </p>
 
   <section id="login" class="card" hidden>
@@ -190,37 +246,100 @@
   </section>
 
   <section id="app" hidden>
-    <form id="add-form" class="card" autocomplete="off">
-      <input id="title" placeholder="Куда хотим сходить?" maxlength="200" required>
-      <input id="link" type="url" placeholder="Ссылка на карту или сайт (необязательно)">
-      <button class="primary" type="submit">Добавить место</button>
-    </form>
-
-    <div class="actions">
-      <button id="random" type="button" class="accent">🎲 Случайное место</button>
-      <button id="share" type="button" class="ghost">🔗 Ссылка для двоих</button>
-    </div>
-
-    <div id="random-box" class="pick" hidden>
-      <p class="label">Сегодня идёте сюда:</p>
-      <p id="random-name" class="name"></p>
-      <div class="row">
-        <button id="random-again" type="button">Ещё раз</button>
-        <button id="random-close" type="button" class="primary">Отлично!</button>
-      </div>
-    </div>
-
-    <nav class="tabs">
-      <button type="button" data-tab="want" class="on">Хотим сходить<b id="cnt-want">0</b></button>
-      <button type="button" data-tab="done">Были<b id="cnt-done">0</b></button>
+    <nav class="sections">
+      <button type="button" data-sec="places" class="on">📍 Места</button>
+      <button type="button" data-sec="movies">🎬 Кино</button>
+      <button type="button" data-sec="map">🗺 Карта</button>
     </nav>
 
-    <ul id="list"></ul>
+    <div id="news" class="notice news" hidden>
+      <span id="news-text"></span>
+      <button id="news-ok" type="button" class="ghost">Ок</button>
+    </div>
+
+    <!-- ===== МЕСТА ===== -->
+    <section id="sec-places">
+      <form id="add-form" class="card add-form" autocomplete="off">
+        <input id="title" placeholder="Куда хотим сходить?" maxlength="200" required>
+        <div class="two">
+          <select id="category" aria-label="Категория"></select>
+          <input id="address" placeholder="Адрес для карты" maxlength="200">
+        </div>
+        <input id="link" type="url" placeholder="Ссылка на сайт (необязательно)">
+        <button class="primary" type="submit">Добавить место</button>
+      </form>
+
+      <div class="actions">
+        <button id="random" type="button" class="accent">🎲 Случайное место</button>
+        <button id="share" type="button" class="ghost">🔗 Ссылка для двоих</button>
+      </div>
+
+      <div id="random-box" class="pick" hidden>
+        <p class="label">Сегодня идёте сюда:</p>
+        <p id="random-name" class="name"></p>
+        <div class="row">
+          <button id="random-again" type="button">Ещё раз</button>
+          <button id="random-close" type="button" class="primary">Отлично!</button>
+        </div>
+      </div>
+
+      <div id="chips" class="chips"></div>
+      <div class="toolbar"><button id="sort" type="button" class="ghost">Сначала новые</button></div>
+
+      <nav class="tabs">
+        <button type="button" data-tab="want" class="on">Хотим сходить<b id="cnt-want">0</b></button>
+        <button type="button" data-tab="done">Были<b id="cnt-done">0</b></button>
+      </nav>
+      <ul id="list"></ul>
+    </section>
+
+    <!-- ===== КИНО ===== -->
+    <section id="sec-movies" hidden>
+      <form id="movie-form" class="card add-form" autocomplete="off">
+        <input id="movie-title" placeholder="Что хотим посмотреть?" maxlength="200" required>
+        <div class="two">
+          <select id="movie-kind" aria-label="Тип">
+            <option value="movie">Фильм</option>
+            <option value="series">Сериал</option>
+          </select>
+          <button class="primary" type="submit">Добавить</button>
+        </div>
+      </form>
+
+      <div class="actions">
+        <button id="movie-random" type="button" class="accent">🎲 Что посмотрим?</button>
+      </div>
+
+      <div id="movie-random-box" class="pick" hidden>
+        <p class="label">Сегодня смотрим:</p>
+        <p id="movie-random-name" class="name"></p>
+        <div class="row">
+          <button id="movie-random-again" type="button">Ещё раз</button>
+          <button id="movie-random-close" type="button" class="primary">Отлично!</button>
+        </div>
+      </div>
+
+      <nav class="tabs">
+        <button type="button" data-mtab="want" class="on">Хотим<b id="mcnt-want">0</b></button>
+        <button type="button" data-mtab="watching">Смотрим<b id="mcnt-watching">0</b></button>
+        <button type="button" data-mtab="done">Смотрели<b id="mcnt-done">0</b></button>
+      </nav>
+      <ul id="movie-list"></ul>
+    </section>
+
+    <!-- ===== КАРТА ===== -->
+    <section id="sec-map" hidden>
+      <p id="pick-hint" class="notice" hidden>Нажми на карте туда, где находится место.</p>
+      <div id="map"></div>
+      <h2>Без точки на карте</h2>
+      <p class="hint">Для этих мест точка ещё не поставлена. «Найти» ищет по адресу или названию, «Вручную» — по нажатию на карту.</p>
+      <ul id="unplaced"></ul>
+    </section>
   </section>
 </main>
 
 <dialog id="rate">
-  <h2>Как вам место?</h2>
+  <h2>Как вам понравилось?</h2>
   <p class="hint">Поставьте оценку или пропустите.</p>
   <div class="stars" id="stars"></div>
   <div class="row">
@@ -231,31 +350,50 @@
 
 <div id="toast" role="status"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, doc, updateDoc, deleteDoc,
+  getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, deleteField,
   onSnapshot, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDkBUJTTZuVsikdLi4dQ2KNAM6XOWm3aRI",
-  authDomain: "places-for-us.firebaseapp.com",
-  projectId: "places-for-us",
-  storageBucket: "places-for-us.firebasestorage.app",
-  messagingSenderId: "661491625941",
-  appId: "1:661491625941:web:ff3803999f890dd02b575c"
-};
-
+let firebaseConfig = null;
+try {
+  ({ firebaseConfig } = await import("./firebase-config.js"));
+} catch (e) {
+  firebaseConfig = null;
+}
 
 const $ = (s) => document.querySelector(s);
 const CODE_RE = /^[a-z0-9-]{12,64}$/;
+const CATS = {
+  cafe: "☕ Кафе",
+  walk: "🌳 Прогулки",
+  trip: "🧳 Поездки",
+  fun: "🎭 Развлечения",
+  shop: "🛍 Покупки",
+  other: "✨ Другое"
+};
+const MOVIE_KIND = { movie: "Фильм", series: "Сериал" };
 
-const state = { code: "", name: "", places: [], tab: "want", ratingFor: null, lastRandom: null };
+const state = {
+  code: "", name: "", uid: "",
+  section: "places",
+  tab: "want", cat: "all", sort: "new",
+  mtab: "want",
+  places: [], movies: [],
+  ratingFor: null,
+  lastRandom: null, lastMovieRandom: null,
+  lastSeen: 0, newsDismissed: false,
+  pickFor: null, mapFitted: false
+};
 let db = null;
-let unsub = null;
+let unsubs = [];
+let map = null;
+let markers = null;
 
+// ---------- помощники ----------
 function store(key, value) {
   try {
     if (value === undefined) return localStorage.getItem(key) || "";
@@ -264,17 +402,39 @@ function store(key, value) {
   return "";
 }
 
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined && text !== null) e.textContent = text;
+  return e;
+}
+
+function btn(text, handler, cls) {
+  const b = el("button", cls, text);
+  b.type = "button";
+  b.addEventListener("click", handler);
+  return b;
+}
+
+function linkBtn(text, href) {
+  const a = el("a", "btn", text);
+  a.href = href;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  return a;
+}
+
 function toast(text) {
   const t = $("#toast");
   t.textContent = text;
   t.classList.add("show");
   clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => t.classList.remove("show"), 3200);
+  toast.timer = setTimeout(() => t.classList.remove("show"), 3500);
 }
 
 function humanError(e) {
   if (e && e.code === "permission-denied") {
-    return "Нет доступа. Проверь правила Firestore и что код пары не короче 12 символов.";
+    return "Нет доступа. Проверь правила Firestore (в них должны быть places и movies) и код пары.";
   }
   return "Что-то пошло не так: " + ((e && e.message) || e);
 }
@@ -290,20 +450,90 @@ function normalizeCode(v) {
   return v.trim().toLowerCase().replace(/\s+/g, "-");
 }
 
-function genCode() {
-  const abc = "abcdefghjkmnpqrstuvwxyz23456789";
-  const bytes = new Uint8Array(16);
+function randomString(len, alphabet) {
+  const bytes = new Uint8Array(len);
   crypto.getRandomValues(bytes);
   let out = "";
-  bytes.forEach((b, i) => {
-    out += abc[b % abc.length];
-    if (i % 4 === 3 && i < 15) out += "-";
-  });
+  bytes.forEach((b) => { out += alphabet[b % alphabet.length]; });
   return out;
 }
 
-function placesCol() {
-  return collection(db, "pairs", state.code, "places");
+function genCode() {
+  const raw = randomString(16, "abcdefghjkmnpqrstuvwxyz23456789");
+  return raw.match(/.{4}/g).join("-");
+}
+
+function col(name) {
+  return collection(db, "pairs", state.code, name);
+}
+
+function patch(name, id, data) {
+  return updateDoc(doc(col(name), id), data).catch((e) => toast(humanError(e)));
+}
+
+function removeItem(name, item) {
+  if (confirm("Удалить «" + (item.title || "") + "»?")) {
+    deleteDoc(doc(col(name), item.id)).catch((e) => toast(humanError(e)));
+  }
+}
+
+function createdMs(x) {
+  return (x.createdAt && x.createdAt.toMillis) ? x.createdAt.toMillis() : 0;
+}
+
+function isNew(x) {
+  const t = createdMs(x);
+  return state.lastSeen > 0 && t > state.lastSeen && x.addedBy && x.addedBy !== state.name;
+}
+
+function voteSum(x) {
+  return Object.values(x.votes || {}).reduce((s, e) => s + (e.v || 0), 0);
+}
+
+function mapUrl(p) {
+  if (typeof p.lat === "number" && typeof p.lng === "number") {
+    return "https://yandex.ru/maps/?pt=" + p.lng + "," + p.lat + "&z=16&l=map";
+  }
+  return "https://yandex.ru/maps/?text=" + encodeURIComponent(p.address || p.title || "");
+}
+
+async function geocode(q) {
+  const url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=ru&q=" + encodeURIComponent(q);
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("сервис карт ответил " + r.status);
+  const j = await r.json();
+  if (!j.length) return null;
+  return { lat: parseFloat(j[0].lat), lng: parseFloat(j[0].lon) };
+}
+
+// ---------- уведомления ----------
+function notify(text) {
+  toast(text);
+  try {
+    if ("Notification" in window && Notification.permission === "granted" && document.hidden) {
+      new Notification("Наши места", { body: text });
+    }
+  } catch (e) { /* не страшно */ }
+}
+
+function setupNotifyButton() {
+  const b = $("#notify");
+  if (!("Notification" in window)) { b.hidden = true; return; }
+  b.hidden = Notification.permission === "granted";
+}
+
+async function askNotifications() {
+  try {
+    const p = await Notification.requestPermission();
+    if (p === "granted") {
+      $("#notify").hidden = true;
+      toast("Уведомления включены. Они приходят, пока сайт открыт во вкладке или на экране");
+    } else {
+      toast("Уведомления не разрешены в браузере");
+    }
+  } catch (e) {
+    toast("Не удалось включить уведомления. На iPhone сначала добавь сайт на экран «Домой»");
+  }
 }
 
 // ---------- экраны ----------
@@ -312,6 +542,7 @@ function showLogin() {
   $("#login").hidden = false;
   $("#app").hidden = true;
   $("#logout").hidden = true;
+  $("#notify").hidden = true;
   $("#name").value = state.name;
   $("#code").value = state.code;
 }
@@ -320,143 +551,373 @@ function showApp() {
   $("#login").hidden = true;
   $("#app").hidden = false;
   $("#logout").hidden = false;
+  setupNotifyButton();
   start();
+  showSection(state.section);
+}
+
+function showSection(sec) {
+  state.section = sec;
+  $("#sec-places").hidden = sec !== "places";
+  $("#sec-movies").hidden = sec !== "movies";
+  $("#sec-map").hidden = sec !== "map";
+  document.querySelectorAll(".sections button").forEach((b) => {
+    b.classList.toggle("on", b.dataset.sec === sec);
+  });
+  if (sec === "map") {
+    initMap();
+    renderMap();
+    if (map) setTimeout(() => map.invalidateSize(), 50);
+  }
+}
+
+// ---------- подписка на данные ----------
+function listen(name, key, label) {
+  let first = true;
+  const q = query(col(name), orderBy("createdAt", "desc"));
+  const u = onSnapshot(q, (snap) => {
+    if (!first) {
+      snap.docChanges().forEach((ch) => {
+        if (ch.type !== "added" || ch.doc.metadata.hasPendingWrites) return;
+        const d = ch.doc.data();
+        const t = createdMs(d);
+        if (!t || Date.now() - t > 120000) return;
+        if (d.addedBy && d.addedBy !== state.name) {
+          notify(d.addedBy + " добавил(а) " + label + ": " + d.title);
+        }
+      });
+    }
+    first = false;
+    state[key] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    renderAll();
+  }, (err) => toast(humanError(err)));
+  unsubs.push(u);
 }
 
 function start() {
   stop();
-  const q = query(placesCol(), orderBy("createdAt", "desc"));
-  unsub = onSnapshot(q, (snap) => {
-    state.places = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    render();
-  }, (err) => toast(humanError(err)));
+  listen("places", "places", "место");
+  listen("movies", "movies", "в кино");
 }
 
 function stop() {
-  if (unsub) { unsub(); unsub = null; }
+  unsubs.forEach((u) => u());
+  unsubs = [];
   state.places = [];
+  state.movies = [];
 }
 
 // ---------- отрисовка ----------
-function render() {
+function renderAll() {
+  renderNews();
+  renderPlaces();
+  renderMovies();
+  if (state.section === "map") renderMap();
+}
+
+function renderNews() {
+  const box = $("#news");
+  if (state.newsDismissed || !state.lastSeen) { box.hidden = true; return; }
+  const np = state.places.filter(isNew).length;
+  const nm = state.movies.filter(isNew).length;
+  if (!np && !nm) { box.hidden = true; return; }
+  const parts = [];
+  if (np) parts.push("мест: " + np);
+  if (nm) parts.push("фильмов и сериалов: " + nm);
+  $("#news-text").textContent = "Новое с прошлого раза — " + parts.join(", ");
+  box.hidden = false;
+}
+
+function renderChips() {
+  const box = $("#chips");
+  box.replaceChildren();
+  const all = { all: "Все", ...CATS };
+  Object.entries(all).forEach(([key, label]) => {
+    const b = btn(label, () => { state.cat = key; renderChips(); renderPlaces(); }, key === state.cat ? "on" : "");
+    box.append(b);
+  });
+}
+
+function renderPlaces() {
   const want = state.places.filter((p) => !p.visited);
   const done = state.places.filter((p) => p.visited);
   $("#cnt-want").textContent = want.length;
   $("#cnt-done").textContent = done.length;
+  document.querySelectorAll("[data-tab]").forEach((b) => b.classList.toggle("on", b.dataset.tab === state.tab));
+  $("#sort").textContent = state.sort === "new" ? "Сначала новые" : "Сначала желанные";
 
-  document.querySelectorAll(".tabs button").forEach((b) => {
-    b.classList.toggle("on", b.dataset.tab === state.tab);
-  });
+  let list = state.tab === "want" ? want : done;
+  if (state.cat !== "all") list = list.filter((p) => (p.category || "other") === state.cat);
+  if (state.sort === "votes") list = [...list].sort((a, b) => voteSum(b) - voteSum(a));
 
-  const list = state.tab === "want" ? want : done;
   const ul = $("#list");
   ul.replaceChildren();
-
   if (!list.length) {
-    const li = document.createElement("li");
-    li.className = "empty";
-    li.textContent = state.tab === "want"
+    ul.append(el("li", "empty", state.tab === "want"
       ? "Пока пусто. Добавьте первое место ✨"
-      : "Здесь появятся места, где вы уже были.";
-    ul.append(li);
+      : "Здесь появятся места, где вы уже были."));
     return;
   }
-  list.forEach((p) => ul.append(card(p)));
+  list.forEach((p) => ul.append(placeCard(p)));
 }
 
-function card(p) {
-  const li = document.createElement("li");
-  li.className = "place";
+function voteRow(colName, item) {
+  const wrap = el("div", "votes");
+  const votes = item.votes || {};
+  const mine = votes[state.uid] ? votes[state.uid].v : 0;
+  wrap.append(el("span", "votes-label", "Хочу:"));
+  for (let n = 1; n <= 5; n++) {
+    const h = btn("♥", () => setVote(colName, item.id, n === mine ? 0 : n), "heart" + (n <= mine ? " on" : ""));
+    h.setAttribute("aria-label", "Оценка " + n + " из 5");
+    wrap.append(h);
+  }
+  const entries = Object.values(votes);
+  if (entries.length) {
+    wrap.append(el("span", "votes-sum", entries.map((e) => e.n + " " + e.v).join(" · ")));
+    if (entries.length >= 2 && entries.every((e) => e.v >= 4)) {
+      wrap.append(el("span", "votes-hot", "🔥 оба хотим"));
+    }
+  }
+  return wrap;
+}
 
-  const main = document.createElement("div");
-  main.className = "place-main";
+function setVote(colName, id, n) {
+  const value = n ? { n: state.name, v: n } : deleteField();
+  patch(colName, id, { ["votes." + state.uid]: value });
+}
+
+function placeCard(p) {
+  const li = el("li", "place");
+  const top = el("div", "place-top");
+  const main = el("div", "place-main");
 
   const url = p.link ? safeUrl(p.link) : null;
-  const title = document.createElement(url ? "a" : "span");
-  title.className = "place-title";
-  title.textContent = p.title || "";
+  const title = el(url ? "a" : "span", "place-title", p.title || "");
   if (url) { title.href = url; title.target = "_blank"; title.rel = "noopener noreferrer"; }
   main.append(title);
+  if (isNew(p)) main.append(el("span", "badge-new", "новое"));
 
-  const meta = document.createElement("div");
-  meta.className = "place-meta";
-  meta.append(document.createTextNode(p.addedBy ? "добавил(а): " + p.addedBy : ""));
-  if (p.visited && p.rating) {
-    const r = document.createElement("span");
-    r.className = "rating";
-    r.textContent = (p.addedBy ? " · " : "") + "оценка " + p.rating + "/10";
-    meta.append(r);
-  }
+  const meta = el("div", "place-meta");
+  const parts = [CATS[p.category] || CATS.other];
+  if (p.addedBy) parts.push("добавил(а): " + p.addedBy);
+  meta.append(document.createTextNode(parts.join(" · ")));
+  if (p.visited && p.rating) meta.append(el("span", "rating", " · оценка " + p.rating + "/10"));
   main.append(meta);
-  li.append(main);
+  top.append(main);
 
-  const act = document.createElement("button");
+  const del = btn("✕", () => removeItem("places", p), "del ghost");
+  del.setAttribute("aria-label", "Удалить");
+  top.append(del);
+  li.append(top);
+
+  if (!p.visited) li.append(voteRow("places", p));
+
+  const act = el("div", "place-actions");
+  act.append(linkBtn("📍 На карте", mapUrl(p)));
   if (p.visited) {
-    act.textContent = "Вернуть";
-    act.addEventListener("click", () => updateDoc(doc(placesCol(), p.id), { visited: false, rating: null }).catch((e) => toast(humanError(e))));
+    act.append(btn("Вернуть", () => patch("places", p.id, { visited: false, rating: null })));
   } else {
-    act.textContent = "Были ✓";
-    act.addEventListener("click", () => openRate(p.id));
+    act.append(btn("Были ✓", () => openRate("places", p.id, { visited: true }), "ok"));
   }
   li.append(act);
+  return li;
+}
 
-  const del = document.createElement("button");
-  del.className = "del ghost";
+function renderMovies() {
+  const by = (s) => state.movies.filter((m) => (m.status || "want") === s);
+  ["want", "watching", "done"].forEach((s) => { $("#mcnt-" + s).textContent = by(s).length; });
+  document.querySelectorAll("[data-mtab]").forEach((b) => b.classList.toggle("on", b.dataset.mtab === state.mtab));
+
+  const list = by(state.mtab);
+  const ul = $("#movie-list");
+  ul.replaceChildren();
+  if (!list.length) {
+    ul.append(el("li", "empty", state.mtab === "want"
+      ? "Добавьте первый фильм или сериал 🍿"
+      : "Здесь пока пусто."));
+    return;
+  }
+  list.forEach((m) => ul.append(movieCard(m)));
+}
+
+function movieCard(m) {
+  const li = el("li", "place");
+  const top = el("div", "place-top");
+  const main = el("div", "place-main");
+  main.append(el("span", "place-title", m.title || ""));
+  if (isNew(m)) main.append(el("span", "badge-new", "новое"));
+
+  const meta = el("div", "place-meta");
+  const parts = [MOVIE_KIND[m.kind] || "Фильм"];
+  if (m.addedBy) parts.push("добавил(а): " + m.addedBy);
+  meta.append(document.createTextNode(parts.join(" · ")));
+  if (m.status === "done" && m.rating) meta.append(el("span", "rating", " · оценка " + m.rating + "/10"));
+  main.append(meta);
+  top.append(main);
+
+  const del = btn("✕", () => removeItem("movies", m), "del ghost");
   del.setAttribute("aria-label", "Удалить");
-  del.textContent = "✕";
-  del.addEventListener("click", () => {
-    if (confirm("Удалить «" + (p.title || "") + "»?")) {
-      deleteDoc(doc(placesCol(), p.id)).catch((e) => toast(humanError(e)));
-    }
-  });
-  li.append(del);
+  top.append(del);
+  li.append(top);
+
+  const status = m.status || "want";
+  if (status === "want") li.append(voteRow("movies", m));
+
+  const act = el("div", "place-actions");
+  act.append(linkBtn("🔎 Найти", "https://www.kinopoisk.ru/index.php?kp_query=" + encodeURIComponent(m.title || "")));
+  if (status === "want") {
+    if (m.kind === "series") act.append(btn("Смотрим", () => patch("movies", m.id, { status: "watching" })));
+    act.append(btn("Посмотрели ✓", () => openRate("movies", m.id, { status: "done" }), "ok"));
+  } else if (status === "watching") {
+    act.append(btn("Посмотрели ✓", () => openRate("movies", m.id, { status: "done" }), "ok"));
+    act.append(btn("Вернуть", () => patch("movies", m.id, { status: "want" })));
+  } else {
+    act.append(btn("Вернуть", () => patch("movies", m.id, { status: "want", rating: null })));
+  }
+  li.append(act);
   return li;
 }
 
 // ---------- оценка ----------
-function openRate(id) {
-  state.ratingFor = id;
+function openRate(colName, id, fields) {
+  state.ratingFor = { colName, id, fields };
   $("#rate").showModal();
 }
 
 function finishRate(rating) {
-  const id = state.ratingFor;
+  const r = state.ratingFor;
   $("#rate").close();
   state.ratingFor = null;
-  if (!id) return;
-  updateDoc(doc(placesCol(), id), { visited: true, rating: rating }).catch((e) => toast(humanError(e)));
+  if (!r) return;
+  patch(r.colName, r.id, { ...r.fields, rating: rating });
 }
 
-// ---------- случайное место ----------
-function pickRandom() {
-  const want = state.places.filter((p) => !p.visited);
-  if (!want.length) { toast("В списке пока нет мест"); return; }
-  let pool = want;
-  if (want.length > 1 && state.lastRandom) pool = want.filter((p) => p.id !== state.lastRandom);
-  const p = pool[Math.floor(Math.random() * pool.length)];
-  state.lastRandom = p.id;
-  $("#random-name").textContent = p.title;
-  $("#random-box").hidden = false;
+// ---------- случайный выбор ----------
+function pickRandom(list, lastKey, box, nameEl, emptyText) {
+  if (!list.length) { toast(emptyText); return; }
+  let pool = list;
+  if (list.length > 1 && state[lastKey]) pool = list.filter((x) => x.id !== state[lastKey]);
+  const x = pool[Math.floor(Math.random() * pool.length)];
+  state[lastKey] = x.id;
+  $(nameEl).textContent = x.title;
+  $(box).hidden = false;
+}
+
+// ---------- карта ----------
+function initMap() {
+  if (map) return;
+  if (typeof L === "undefined") {
+    $("#map").textContent = "Карта не загрузилась. Проверь интернет и обнови страницу.";
+    return;
+  }
+  map = L.map("map").setView([55.75, 37.62], 10);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "© OpenStreetMap"
+  }).addTo(map);
+  markers = L.layerGroup().addTo(map);
+  map.on("click", (e) => {
+    if (!state.pickFor) return;
+    const id = state.pickFor;
+    state.pickFor = null;
+    $("#pick-hint").hidden = true;
+    patch("places", id, { lat: e.latlng.lat, lng: e.latlng.lng }).then(() => toast("Точка сохранена"));
+  });
+}
+
+function popupContent(p) {
+  const d = el("div");
+  d.append(el("strong", null, p.title || ""));
+  d.append(document.createElement("br"));
+  const a = el("a", null, "Открыть в Яндекс.Картах");
+  a.href = mapUrl(p);
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  d.append(a);
+  return d;
+}
+
+function renderMap() {
+  const hasPoint = (p) => typeof p.lat === "number" && typeof p.lng === "number";
+  if (map) {
+    markers.clearLayers();
+    const pts = [];
+    state.places.filter(hasPoint).forEach((p) => {
+      L.circleMarker([p.lat, p.lng], {
+        radius: 10, weight: 2, color: "#ffffff",
+        fillColor: p.visited ? "#4c9a6a" : "#e0635a", fillOpacity: 0.95
+      }).bindPopup(popupContent(p)).addTo(markers);
+      pts.push([p.lat, p.lng]);
+    });
+    if (pts.length && !state.mapFitted) {
+      map.fitBounds(pts, { padding: [40, 40], maxZoom: 15 });
+      state.mapFitted = true;
+    }
+  }
+
+  const ul = $("#unplaced");
+  ul.replaceChildren();
+  const rest = state.places.filter((p) => !hasPoint(p));
+  if (!rest.length) {
+    ul.append(el("li", "empty", state.places.length ? "У всех мест есть точка 🎉" : "Пока нет мест."));
+    return;
+  }
+  rest.forEach((p) => {
+    const li = el("li", "place");
+    const top = el("div", "place-top");
+    const main = el("div", "place-main");
+    main.append(el("span", "place-title", p.title || ""));
+    if (p.address) main.append(el("div", "place-meta", p.address));
+    top.append(main);
+    li.append(top);
+    const act = el("div", "place-actions");
+    act.append(btn("🔍 Найти", () => autoPlace(p)));
+    act.append(btn("👆 Вручную", () => {
+      state.pickFor = p.id;
+      $("#pick-hint").textContent = "Нажми на карте туда, где находится «" + (p.title || "место") + "».";
+      $("#pick-hint").hidden = false;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }));
+    li.append(act);
+    ul.append(li);
+  });
+}
+
+async function autoPlace(p) {
+  toast("Ищем на карте…");
+  try {
+    const g = await geocode(p.address || p.title);
+    if (!g) { toast("Не нашли. Уточни адрес или поставь точку вручную"); return; }
+    await patch("places", p.id, { lat: g.lat, lng: g.lng });
+    toast("Точка поставлена");
+  } catch (e) {
+    toast("Не получилось найти: " + ((e && e.message) || e));
+  }
 }
 
 // ---------- события ----------
 function setup() {
+  // категории
+  const sel = $("#category");
+  Object.entries(CATS).forEach(([key, label]) => {
+    const o = document.createElement("option");
+    o.value = key;
+    o.textContent = label;
+    sel.append(o);
+  });
+  renderChips();
+
+  // оценка 1-10
   const stars = $("#stars");
-  for (let i = 1; i <= 10; i++) {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.textContent = i;
-    b.addEventListener("click", () => finishRate(i));
-    stars.append(b);
-  }
+  for (let i = 1; i <= 10; i++) stars.append(btn(String(i), () => finishRate(i)));
   $("#rate-skip").addEventListener("click", () => finishRate(null));
   $("#rate-cancel").addEventListener("click", () => { state.ratingFor = null; $("#rate").close(); });
 
+  // вход
   $("#gen").addEventListener("click", () => {
     $("#code").value = genCode();
     toast("Код создан. Сохраните его и отправьте второму человеку");
   });
-
   $("#enter").addEventListener("click", () => {
     const name = $("#name").value.trim();
     const code = normalizeCode($("#code").value);
@@ -474,39 +935,90 @@ function setup() {
     store("op_code", code);
     showApp();
   });
-
   $("#logout").addEventListener("click", () => {
     store("op_code", null);
     state.code = "";
+    state.mapFitted = false;
     showLogin();
   });
 
+  // навигация
+  document.querySelectorAll(".sections button").forEach((b) => {
+    b.addEventListener("click", () => showSection(b.dataset.sec));
+  });
+  document.querySelectorAll("[data-tab]").forEach((b) => {
+    b.addEventListener("click", () => { state.tab = b.dataset.tab; renderPlaces(); });
+  });
+  document.querySelectorAll("[data-mtab]").forEach((b) => {
+    b.addEventListener("click", () => { state.mtab = b.dataset.mtab; renderMovies(); });
+  });
+  $("#sort").addEventListener("click", () => {
+    state.sort = state.sort === "new" ? "votes" : "new";
+    renderPlaces();
+  });
+
+  // добавить место
   $("#add-form").addEventListener("submit", (e) => {
     e.preventDefault();
     const title = $("#title").value.trim();
     if (!title) return;
     const link = $("#link").value.trim();
-    addDoc(placesCol(), {
+    const address = $("#address").value.trim();
+    addDoc(col("places"), {
       title,
+      category: $("#category").value,
+      address,
       link: link ? (safeUrl(link) || "") : "",
       addedBy: state.name,
       visited: false,
       rating: null,
       createdAt: serverTimestamp()
+    }).then(async (ref) => {
+      if (!address) return;
+      try {
+        const g = await geocode(address);
+        if (g) await updateDoc(ref, { lat: g.lat, lng: g.lng });
+        else toast("Адрес на карте не нашли. Точку можно поставить вручную во вкладке «Карта»");
+      } catch (err) { /* без точки тоже ок */ }
     }).catch((err) => toast(humanError(err)));
     e.target.reset();
     state.tab = "want";
-    render();
+    renderPlaces();
   });
 
-  document.querySelectorAll(".tabs button").forEach((b) => {
-    b.addEventListener("click", () => { state.tab = b.dataset.tab; render(); });
+  // добавить фильм
+  $("#movie-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const title = $("#movie-title").value.trim();
+    if (!title) return;
+    addDoc(col("movies"), {
+      title,
+      kind: $("#movie-kind").value,
+      status: "want",
+      rating: null,
+      addedBy: state.name,
+      createdAt: serverTimestamp()
+    }).catch((err) => toast(humanError(err)));
+    e.target.reset();
+    state.mtab = "want";
+    renderMovies();
   });
 
-  $("#random").addEventListener("click", pickRandom);
-  $("#random-again").addEventListener("click", pickRandom);
+  // случайный выбор
+  const pickPlace = () => pickRandom(
+    state.places.filter((p) => !p.visited), "lastRandom", "#random-box", "#random-name", "В списке пока нет мест");
+  $("#random").addEventListener("click", pickPlace);
+  $("#random-again").addEventListener("click", pickPlace);
   $("#random-close").addEventListener("click", () => { $("#random-box").hidden = true; });
 
+  const pickMovie = () => pickRandom(
+    state.movies.filter((m) => (m.status || "want") === "want"),
+    "lastMovieRandom", "#movie-random-box", "#movie-random-name", "В списке пока нет фильмов");
+  $("#movie-random").addEventListener("click", pickMovie);
+  $("#movie-random-again").addEventListener("click", pickMovie);
+  $("#movie-random-close").addEventListener("click", () => { $("#movie-random-box").hidden = true; });
+
+  // ссылка для второго человека
   $("#share").addEventListener("click", async () => {
     const link = location.origin + location.pathname + "#" + state.code;
     try {
@@ -516,10 +1028,20 @@ function setup() {
       prompt("Скопируй ссылку и отправь второму человеку:", link);
     }
   });
+
+  // уведомления и «что нового»
+  $("#notify").addEventListener("click", askNotifications);
+  $("#news-ok").addEventListener("click", () => {
+    state.newsDismissed = true;
+    $("#news").hidden = true;
+  });
+  const saveSeen = () => store("op_seen", String(Date.now()));
+  document.addEventListener("visibilitychange", () => { if (document.hidden) saveSeen(); });
+  window.addEventListener("pagehide", saveSeen);
 }
 
 // ---------- запуск ----------
-const configured = firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("ВСТАВЬ");
+const configured = firebaseConfig && firebaseConfig.apiKey && !String(firebaseConfig.apiKey).startsWith("ВСТАВЬ");
 if (!configured) {
   $("#setup").hidden = false;
 } else {
@@ -527,6 +1049,13 @@ if (!configured) {
   setup();
 
   state.name = store("op_name");
+  state.lastSeen = Number(store("op_seen")) || 0;
+  state.uid = store("op_uid");
+  if (!/^[a-z0-9]{10,}$/.test(state.uid)) {
+    state.uid = randomString(14, "abcdefghijklmnopqrstuvwxyz0123456789");
+    store("op_uid", state.uid);
+  }
+
   const fromLink = normalizeCode(location.hash.slice(1));
   if (fromLink) history.replaceState(null, "", location.pathname + location.search);
   state.code = CODE_RE.test(fromLink) ? fromLink : store("op_code");
